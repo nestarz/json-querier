@@ -14,7 +14,7 @@ export const flatten = (obj, { roots = [], sep = "_", ok } = {}) =>
         memo,
         Object.prototype.toString.call(obj[prop]) === "[object Object]" &&
           (typeof ok !== "function" || ok(prop, obj))
-          ? flatten(obj[prop], roots.concat([prop]))
+          ? flatten(obj[prop], { roots: roots.concat([prop]), sep, ok })
           : { [roots.concat([prop]).join(sep)]: obj[prop] }
       ),
     {}
