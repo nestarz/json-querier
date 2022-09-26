@@ -6,6 +6,19 @@ export const mapAsync = (fb) => [
   Promise.resolve([]),
 ];
 
+export const flatten = (obj, roots = [], sep = "_") =>
+  Object.keys(obj).reduce(
+    (memo, prop) =>
+      Object.assign(
+        {},
+        memo,
+        Object.prototype.toString.call(obj[prop]) === "[object Object]"
+          ? flatten(obj[prop], roots.concat([prop]))
+          : { [roots.concat([prop]).join(sep)]: obj[prop] }
+      ),
+    {}
+  );
+
 export const unique = (fn) => (a, i, arr) =>
   i === arr.findIndex((b) => fn(a) === fn(b));
 
@@ -69,6 +82,7 @@ export function stringifyValueForSQL(v, options, encode) {
   if (typeof v === "bigint") return v.toString();
   if (typeof v === "string" && isUuid(v))
     return escapeLiteral("" + v) + "::uuid";
-  if (typeof v === "object") return escapeLiteral(JSON.stringify(v)) + "::json";
+  if (typeof v === "object")
+    return escapeLiteral(JSON.stringify(v)) + "::jsonb";
   return escapeLiteral("" + v);
 }

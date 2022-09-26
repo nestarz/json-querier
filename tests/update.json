@@ -1,0 +1,89 @@
+{
+  "table": "ads",
+  "updates": [
+    {
+      "where": {
+        "provider_id": { "_eq": "12dcbc0c-6871-4655-b82e-6e1e017c9772" },
+        "provider_ad_id": { "_eq": "1745019625507874" }
+      },
+      "_set": {
+        "metrics": {
+          "comments": "0",
+          "spend": "0.0",
+          "video_play_actions": "0",
+          "shares": "0",
+          "clicks": "0",
+          "clicks_on_music_disc": "0",
+          "video_views_p100": "0",
+          "video_watched_2s": "0",
+          "video_views_p25": "0",
+          "impressions": "0",
+          "profile_visits": "0",
+          "follows": "0",
+          "video_views_p50": "0",
+          "likes": "0",
+          "video_views_p75": "0"
+        }
+      }
+    },
+    {
+      "where": {
+        "provider_id": { "_eq": "12dcbc0c-6871-4655-b82e-6e1e017c9772" },
+        "provider_ad_id": { "_eq": "1745019625507874" }
+      },
+      "_set": {
+        "metrics": {
+          "comments": "0",
+          "spend": "0.0",
+          "video_play_actions": "0",
+          "shares": "0",
+          "clicks": "0",
+          "clicks_on_music_disc": "0",
+          "video_views_p100": "0",
+          "video_watched_2s": "0",
+          "video_views_p25": "0",
+          "impressions": "0",
+          "profile_visits": "0",
+          "follows": "0",
+          "video_views_p50": "0",
+          "likes": "0",
+          "video_views_p75": "0"
+        }
+      }
+    },
+    {
+      "where": {
+        "provider_id": { "_eq": "12dcbc0c-6871-4655-b82e-6e1e017c9772" },
+        "provider_ad_id": { "_eq": "1744758185415697" }
+      },
+      "_set": {
+        "metrics": {
+          "comments": "4",
+          "spend": "38.94",
+          "video_play_actions": "41797",
+          "shares": "5",
+          "clicks": "0",
+          "clicks_on_music_disc": "0",
+          "video_views_p100": "3215",
+          "video_watched_2s": "22768",
+          "video_views_p25": "10215",
+          "impressions": "43493",
+          "profile_visits": "80",
+          "follows": "6",
+          "video_views_p50": "6485",
+          "likes": "185",
+          "video_views_p75": "4396"
+        },
+        "spend": 38.94,
+        "impressions": 43493,
+        "views": 41797,
+        "views_3s": 22768,
+        "views_p25": 10215,
+        "views_p50": 6485,
+        "views_p75": 4396,
+        "views_p100": 3215,
+        "engagements": 280
+      }
+    }
+  ]
+}

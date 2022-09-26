@@ -13,5 +13,8 @@
     "sql"
   ],
   "author": "Elias Rhouzlane",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "postgres": "^3.2.4"
+  }
 }
