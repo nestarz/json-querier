@@ -49,7 +49,7 @@ export default (sql) => {
     return sql`${sql(`values_${table}_raw`)} (__id) AS (
 VALUES ${joinDataSql(values)}
 ), ${sql(`values_${table}`)} AS (
-  SELECT t.*, (ARRAY(SELECT jsonb_array_elements(d.value))) as column1 
+  SELECT t.*, (ARRAY(SELECT jsonb_array_elements(d.value)))::int[] as column1 
   FROM ${sql(`values_${table}_raw`)} t, jsonb_array_elements(t.__id::jsonb) as d
 )`;
   };
@@ -373,11 +373,15 @@ ON sq.row_number=sq2.row_number
         ? sql`SELECT ${[
             ...toArray(returning)
               .filter((v) => v !== "*")
-              .map((d) => sql(d)),
-            toArray(returning).includes("*") ? sql`t.*` : null,
+              .map((d) => sql`t1.${sql(d)}`),
+            toArray(returning).includes("*") ? sql`t1.*` : null,
           ]
             .filter((v) => v)
-            .reduce(joinSql(sql`, `))} FROM ${sql(`cte_${table}`)} t;`
+            .reduce(joinSql(sql`, `))} FROM ${sql(
+            `cte_${table}`
+          )} t1 JOIN ${sql(
+            `cte_${table}_rn`
+          )} t2 ON array_length(t2.column1, 1) = 1 AND t1.id = t2.id;`
         : sql`SELECT 0;`
     )(arr.find((d) => d.index.length === 1))}
   `
