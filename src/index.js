@@ -367,7 +367,19 @@ ON sq.row_number=sq2.row_number
         .map(WITH),
       ...INSERT_CTE(arr),
     ].reduce(joinSql(sql`, `), noopSql)}
-    SELECT * FROM ${sql(`cte_${arr[0].table}`)};
+
+    ${pipe(({ table, returning } = {}) =>
+      toArray(returning)?.length > 0
+        ? sql`SELECT ${[
+            ...toArray(returning)
+              .filter((v) => v !== "*")
+              .map((d) => sql(d)),
+            toArray(returning).includes("*") ? sql`t.*` : null,
+          ]
+            .filter((v) => v)
+            .reduce(joinSql(sql`, `))} FROM ${sql(`cte_${table}`)} t;`
+        : sql`SELECT 0;`
+    )(arr.find((d) => d.index.length === 1))}
   `
     ),
   };
