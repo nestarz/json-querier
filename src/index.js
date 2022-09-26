@@ -49,28 +49,28 @@ UPDATE SET ${update_columns
 
   const GET_CONSTRAINT_KEYS = (constraint, table, schema = "public") =>
     sql`
-SELECT
-con.conname "constraint",
-concat(nsp.nspname, '.', rel.relname) "table",
-(
-SELECT
-  array_agg(att.attname)
-FROM
-  pg_attribute att
-  INNER JOIN unnest(con.conkey)
-  unnest(conkey) ON unnest.conkey = att.attnum
-WHERE
-  att.attrelid = con.conrelid) "columns"
-FROM
-pg_constraint con
-INNER JOIN pg_class rel ON rel.oid = con.conrelid
-INNER JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
-WHERE
-nsp.nspname = ${schema}
-AND rel.relname = ${table}
-AND con.conname = ${constraint};
-
-`.then((arr) => arr.flatMap((d) => d.columns));
+      SELECT
+        con.conname "constraint",
+        concat(nsp.nspname, '.', rel.relname) "table",
+        (
+          SELECT
+            array_agg(att.attname)
+          FROM
+            pg_attribute att
+            INNER JOIN unnest(con.conkey)
+            unnest(conkey) ON unnest.conkey = att.attnum
+          WHERE
+            att.attrelid = con.conrelid) "columns"
+      FROM
+        pg_constraint con
+        INNER JOIN pg_class rel ON rel.oid = con.conrelid
+        INNER JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+      WHERE
+        nsp.nspname = ${schema}
+        AND rel.relname = ${table}
+        AND con.conname = ${constraint};
+      
+    `.then((arr) => arr.flatMap((d) => d.columns));
 
   const INSERT_CTE = (arr) =>
     arr.filter(unique(({ table }) => table)).map(
@@ -241,7 +241,21 @@ ON sq.row_number=sq2.row_number
     _gte: sql`>=`,
   };
   return {
-    update: ({ table, updates }) => {
+    update: async ({ table, updates }) => {
+      const types = await pipe(
+        (arr) =>
+          arr.map(({ column_name, data_type }) => [column_name, data_type]),
+        Object.fromEntries
+      )(sql`
+      SELECT
+        column_name,
+        data_type
+      FROM
+        information_schema.columns
+      WHERE
+        table_name = ${table};
+    `);
+      console.log(types);
       const keys = [
         ...new Set(updates.flatMap(({ _set }) => Object.keys(_set))),
       ].sort();
@@ -295,7 +309,7 @@ ON sq.row_number=sq2.row_number
               stringifyValueForSQL(key)
             )} = ANY(cte_values.__to_update) THEN cte_values.${sql(
               key
-            )} ELSE t.${sql(key)} END)`
+            )}::${sql.unsafe(types[key])} ELSE t.${sql(key)} END)`
         )
         .reduce(joinSql(sql`,\n\t `, noopSql))}
       FROM cte_values JOIN cte_where ON cte_values.__where_rank = cte_where.rank
@@ -306,9 +320,9 @@ ON sq.row_number=sq2.row_number
             ([wkey, key, op]) =>
               sql`(${sql.unsafe(
                 stringifyValueForSQL(wkey)
-              )} != ALL(cte_where.__where_keys) OR t.${sql(key)} ${
-                mapCompare[op]
-              } cte_where.${sql(wkey)})`
+              )} != ALL(cte_where.__where_keys) OR t.${sql(key)}::${sql.unsafe(
+                types[key]
+              )} ${mapCompare[op]} cte_where.${sql(wkey)})`
           )
           .reduce(joinSql(sql`\n\tAND\n\t`, noopSql))}
       RETURNING
