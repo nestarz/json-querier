@@ -31,8 +31,11 @@ export default (sql) => {
 
   // INSERT
   const WITH = ({ table, values }) =>
-    sql`${sql(`values_${table}`)} AS (
+    sql`${sql(`values_${table}_raw`)} (__id) AS (
 VALUES ${joinDataSql(values)}
+), ${sql(`values_${table}`)} AS (
+  SELECT t.*, (ARRAY(SELECT jsonb_array_elements(d.value))) as column1 
+  FROM ${sql(`values_${table}_raw`)} t, jsonb_array_elements(t.__id::jsonb) as d
 )`;
 
   const CONFLICT = ({ constraint, update_columns = [] }) =>
@@ -253,14 +256,15 @@ ON sq.row_number=sq2.row_number
           arr.map(({ column_name, data_type }) => [column_name, data_type]),
         Object.fromEntries
       )(sql`
-      SELECT
-        column_name,
-        data_type
-      FROM
-        information_schema.columns
-      WHERE
-        table_name = ${table};
-    `);
+        SELECT
+          column_name,
+          data_type
+        FROM
+          information_schema.columns
+        WHERE
+          table_name = ${table};
+        
+      `);
       const keys = [
         ...new Set(updates.flatMap(({ _set }) => Object.keys(_set))),
       ].sort();
@@ -283,9 +287,11 @@ ON sq.row_number=sq2.row_number
           ).findIndex(([str]) => str === JSON.stringify([v.keys, v.values])),
         }));
 
-      return sql`WITH cte_values ("__where_rank", "__to_update", ${keys
-        .map((key) => sql(key))
-        .reduce(joinSql(sql`, `, noopSql))}) AS (
+      return !(updates?.length > 0)
+        ? []
+        : sql`WITH cte_values ("__where_rank", "__to_update", ${keys
+            .map((key) => sql(key))
+            .reduce(joinSql(sql`, `, noopSql))}) AS (
     VALUES ${joinDataSql(
       data.map(({ rank, _set }) => [
         rank,
@@ -341,14 +347,19 @@ ON sq.row_number=sq2.row_number
       formatData,
       addUniqueKeys,
       (arr) =>
-        arr.length === 0
+        !(arr?.length > 0)
           ? []
           : sql`
     WITH ${[
       ...groupByArray(arr, ({ table }) => table)
         .map(([table, arr]) => ({
           table,
-          values: arr.map((d) => [d.index, ...d.values]),
+          values: groupByArray(arr, (d) => JSON.stringify(d.values)).map(
+            ([valStr, arr]) => [
+              JSON.stringify(arr.map((d) => d.index)),
+              ...JSON.parse(valStr),
+            ]
+          ),
         }))
         .map(WITH),
       ...INSERT_CTE(arr),
