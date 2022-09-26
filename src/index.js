@@ -341,8 +341,9 @@ ON sq.row_number=sq2.row_number
       formatData,
       addUniqueKeys,
       (arr) =>
-        arr.length > 0 &&
-        sql`
+        arr.length === 0
+          ? []
+          : sql`
     WITH ${[
       ...groupByArray(arr, ({ table }) => table)
         .map(([table, arr]) => ({
