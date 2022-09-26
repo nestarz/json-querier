@@ -1,0 +1,16 @@
+{
+  "name": "json-querier",
+  "version": "1.0.0",
+  "description": "Query builder using hasura api",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "query-builder",
+    "hasura",
+    "sql"
+  ],
+  "author": "Elias Rhouzlane",
+  "license": "ISC"
+}
