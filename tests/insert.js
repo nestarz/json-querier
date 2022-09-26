@@ -17,6 +17,7 @@ pipe(
   },
   data: [...Array(100).keys()].map((d) => ({
     text: d,
+    created_time: new Date(),
     table_3: {
       key: "table_3_id",
       table: "table_3",

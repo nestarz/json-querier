@@ -29,14 +29,30 @@ export default (sql) => {
       .map((d) => sql`(${d.reduce(joinSql(sql`, `), noopSql)})`)
       .reduce(joinSql(sql`,\n\t`), noopSql);
 
+  const getTypes = pipe(
+    (table) => sql`
+        SELECT
+          column_name,
+          data_type
+        FROM
+          information_schema.columns
+        WHERE
+          table_name = ${table};
+        
+      `,
+    (arr) => arr.map(({ column_name, data_type }) => [column_name, data_type]),
+    Object.fromEntries
+  );
+
   // INSERT
-  const WITH = ({ table, values }) =>
-    sql`${sql(`values_${table}_raw`)} (__id) AS (
+  const WITH = ({ table, values }) => {
+    return sql`${sql(`values_${table}_raw`)} (__id) AS (
 VALUES ${joinDataSql(values)}
 ), ${sql(`values_${table}`)} AS (
   SELECT t.*, (ARRAY(SELECT jsonb_array_elements(d.value))) as column1 
   FROM ${sql(`values_${table}_raw`)} t, jsonb_array_elements(t.__id::jsonb) as d
 )`;
+  };
 
   const CONFLICT = ({ constraint, update_columns = [] }) =>
     !constraint
@@ -251,20 +267,7 @@ ON sq.row_number=sq2.row_number
   return {
     update: async ({ table, updates }) => {
       const flatten = createFlatten({ ok: (prop) => prop[0] !== "_" });
-      const types = await pipe(
-        (arr) =>
-          arr.map(({ column_name, data_type }) => [column_name, data_type]),
-        Object.fromEntries
-      )(sql`
-        SELECT
-          column_name,
-          data_type
-        FROM
-          information_schema.columns
-        WHERE
-          table_name = ${table};
-        
-      `);
+      const types = await getTypes(table);
       const keys = [
         ...new Set(updates.flatMap(({ _set }) => Object.keys(_set))),
       ].sort();
@@ -355,9 +358,9 @@ ON sq.row_number=sq2.row_number
         .map(([table, arr]) => ({
           table,
           values: groupByArray(arr, (d) => JSON.stringify(d.values)).map(
-            ([valStr, arr]) => [
+            ([_, arr]) => [
               JSON.stringify(arr.map((d) => d.index)),
-              ...JSON.parse(valStr),
+              ...arr[0].values,
             ]
           ),
         }))
