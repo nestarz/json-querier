@@ -11,7 +11,6 @@ pipe(
   noopLog
 )({
   table: "table_1",
-  returning: ["id"],
   on_conflict: {
     constraint: "table_1_text_key",
     update_columns: ["text"],

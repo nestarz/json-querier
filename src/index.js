@@ -368,21 +368,21 @@ ON sq.row_number=sq2.row_number
       ...INSERT_CTE(arr),
     ].reduce(joinSql(sql`, `), noopSql)}
 
-    ${pipe(({ table, returning } = {}) =>
-      toArray(returning).filter((v) => v).length > 0
-        ? sql`SELECT ${[
-            ...toArray(returning)
-              .filter((v) => v !== "*")
-              .map((d) => sql`t1.${sql(d)}`),
-            toArray(returning).includes("*") ? sql`t1.*` : null,
-          ]
-            .filter((v) => v)
-            .reduce(joinSql(sql`, `))} FROM ${sql(
-            `cte_${table}`
-          )} t1 JOIN ${sql(
-            `cte_${table}_rn`
-          )} t2 ON array_length(t2.column1, 1) = 1 AND t1.id = t2.id;`
-        : sql`SELECT 0;`
+    ${pipe(
+      ({ table, returning } = {}) =>
+        sql`SELECT ${[
+          toArray(returning).filter((v) => v).length > 0
+            ? null
+            : sql`count(*) as affected_rows`,
+          ...toArray(returning)
+            .filter((v) => v && v !== "*")
+            .map((d) => sql`t1.${sql(d)}`),
+          toArray(returning).includes("*") ? sql`t1.*` : null,
+        ]
+          .filter((v) => v)
+          .reduce(joinSql(sql`, `))} FROM ${sql(`cte_${table}`)} t1 JOIN ${sql(
+          `cte_${table}_rn`
+        )} t2 ON array_length(t2.column1, 1) = 1 AND t1.id = t2.id;`
     )(arr.find((d) => d.index.length === 1))}
   `
     ),
