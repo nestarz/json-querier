@@ -5,7 +5,7 @@ import {
   groupByArray,
   toArray,
   mapAsync,
-  flatten,
+  createFlatten,
 } from "./utils.js";
 
 export default (sql) => {
@@ -239,9 +239,15 @@ ON sq.row_number=sq2.row_number
     _nin: sql`NOT IN`,
     _lte: sql`<=`,
     _gte: sql`>=`,
+    _contains: sql`@>`,
+    _contained_in: sql`<@`,
+    _has_key: sql`?`,
+    _has_keys_any: sql`?|`,
+    _has_keys_all: sql`?&`,
   };
   return {
     update: async ({ table, updates }) => {
+      const flatten = createFlatten({ ok: (prop) => prop[0] !== "_" });
       const types = await pipe(
         (arr) =>
           arr.map(({ column_name, data_type }) => [column_name, data_type]),
@@ -255,7 +261,6 @@ ON sq.row_number=sq2.row_number
       WHERE
         table_name = ${table};
     `);
-      console.log(types);
       const keys = [
         ...new Set(updates.flatMap(({ _set }) => Object.keys(_set))),
       ].sort();
@@ -347,7 +352,7 @@ ON sq.row_number=sq2.row_number
         .map(WITH),
       ...INSERT_CTE(arr),
     ].reduce(joinSql(sql`, `), noopSql)}
-    SELECT 0;
+    SELECT * FROM ${sql(`cte_${arr[0].table}`)};
   `
     ),
   };

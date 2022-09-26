@@ -6,18 +6,21 @@ export const mapAsync = (fb) => [
   Promise.resolve([]),
 ];
 
-export const flatten = (obj, roots = [], sep = "_") =>
+export const flatten = (obj, { roots = [], sep = "_", ok } = {}) =>
   Object.keys(obj).reduce(
     (memo, prop) =>
       Object.assign(
         {},
         memo,
-        Object.prototype.toString.call(obj[prop]) === "[object Object]"
+        Object.prototype.toString.call(obj[prop]) === "[object Object]" &&
+          (typeof ok !== "function" || ok(prop, obj))
           ? flatten(obj[prop], roots.concat([prop]))
           : { [roots.concat([prop]).join(sep)]: obj[prop] }
       ),
     {}
   );
+
+export const createFlatten = (obj) => (p) => flatten(p, obj);
 
 export const unique = (fn) => (a, i, arr) =>
   i === arr.findIndex((b) => fn(a) === fn(b));
