@@ -369,7 +369,7 @@ ON sq.row_number=sq2.row_number
     ].reduce(joinSql(sql`, `), noopSql)}
 
     ${pipe(({ table, returning } = {}) =>
-      toArray(returning)?.length > 0
+      toArray(returning).filter((v) => v).length > 0
         ? sql`SELECT ${[
             ...toArray(returning)
               .filter((v) => v !== "*")
